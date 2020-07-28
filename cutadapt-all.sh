@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#list=samples.vtr
-list=samples_remnant.vtr
+list=samples.vtr
 
 script=./cutadapt.sh
 indir=fastq
