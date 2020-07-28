@@ -2,7 +2,7 @@
 
 list=samples.vtr
 
-script=./salmon.sh
+script=bin/salmon.sh
 indir=cutadapt2/fastq
 outdir=salmon/cutadapt2
 

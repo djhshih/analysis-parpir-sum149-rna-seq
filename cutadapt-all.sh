@@ -2,7 +2,7 @@
 
 list=samples.vtr
 
-script=./cutadapt.sh
+script=bin/cutadapt.sh
 indir=fastq
 
 for x in $(cat $list); do
