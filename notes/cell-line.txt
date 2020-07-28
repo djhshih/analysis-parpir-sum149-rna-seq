@@ -1,0 +1,18 @@
+SUM149PT
+
+derived from inflammatory triple negative breast cancer (basal)
+
+PMC3562669:
+EGFR overexpression
+BRCA1 c.2288delT
+ER-
+PR-
+TP53 M237I, 17p loss
+CDKN2A homozygous deletion (p14ARF, p16)
+HRAS wt
+KRAS wt
+PI3KCA wt
+
+COSMIC:
+BRCA1 c.2169delT (different transcript?)
+CDKN2A deletion
