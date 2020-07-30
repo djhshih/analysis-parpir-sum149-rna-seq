@@ -8,37 +8,29 @@ library(parallel)
 library(ComplexHeatmap)
 library(RColorBrewer)
 library(sva)
+library(ggsci)
+
+source("../R/preamble.R")
 
 # cell line: SUM149
 
-in.fname <- as.filename("parpi-resist_ltpm-genes-max.rds");
+#in.fname <- as.filename("parpi-resist_ltpm-genes-max.rds");
+in.fname <- as.filename("parpi-resist_ltpm-genes-mean.rds");
 out.fname <- in.fname;
 out.fname$ext <- NULL;
 
-x <- qread(in.fname);
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
-source("relevel-pheno.R");
-
-stopifnot(colnames(x) == as.character(pheno$sample_id))
-
 mc.cores <- 4;
 
-read_msigdb <- function(collection, version="6.2") {
-	release <- gsub(".", "", version, fixed=TRUE);
-	qread(sprintf("~/data/msigdb/release-%s/%s.v%s.symbols.gmt", release, collection, version))
-}
 
-clone.cols <- brewer.pal(8, "Accent");
-names(clone.cols) <- levels(pheno$clone);
+x <- qread(in.fname);
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
 
-ha <- HeatmapAnnotation(
-	df = select(pheno, clone, treatment, batch, lane, fold_resistance),
-	col = list(
-		treatment = c("DMSO" = "grey30", "None" = "grey60", "Talazoparib" = "royalblue"),
-		clone = clone.cols
-	)
-);
+# arrange samples in order to clones
+idx <- order(pheno$clone);
+x <- x[, idx];
+pheno <- pheno[idx, ];
 
+stopifnot(colnames(x) == as.character(pheno$sample_id))
 
 gsets.h <- read_msigdb("h.all");
 
@@ -48,17 +40,46 @@ es.h <- gsva(x, gsets.h$data, parallel.sz=mc.cores);
 # KRAS signaling status gets reversed using plage...??!
 #es.h <- gsva(x, gsets.h$data, parallel.sz=mc.cores, method="plage");
 
-pdf(tag(out.fname, c("gsva", "h"), ext="pdf"), width=10, height=10);
-Heatmap(es.h, top_annotation = ha, cluster_col = FALSE)
+rename_hallmarks <- function(d) {
+	rownames(d)	 <- gsub("_", " ", sub("HALLMARK_", "", rownames(d)));
+	d
+}
+
+
+ha <- HeatmapAnnotation(
+	df = select(pheno,
+		#clone, treatment, batch, lane, fold_resistance
+		clone
+	),
+	col = list(
+		#treatment = c("None" = "grey60", "DMSO" = "grey30", "Talazoparib" = "royalblue"),
+		clone = clone.cols
+	)
+);
+
+pdf(tag(out.fname, c("gsva", "h"), ext="pdf"), width=12, height=8);
+Heatmap(
+	rename_hallmarks(es.h),
+	top_annotation = ha,
+	column_gap = unit(3, "mm"),
+	clustering_method_rows = "average",
+	clustering_distance_rows = "pearson",
+	column_split = pheno$treatment,
+	cluster_columns = FALSE,
+	show_column_names = FALSE,
+	row_dend_width = unit(20, "mm"),
+	col = rev(brewer.pal(9, "RdBu")),
+	border = TRUE,
+	name = "enrichment score"
+)
 dev.off();
-#Heatmap(es.h, top_annotation = ha, cluster_col = TRUE)
 
 
 gsets.c6 <- read_msigdb("c6.all");
 
 es.c6 <- gsva(x, gsets.c6$data, parallel.sz=mc.cores);
 
-Heatmap(es.c6, top_annotation = ha, cluster_col = FALSE, row_names_gp = gpar(fontsize=4))
+Heatmap(es.c6, top_annotation = ha, cluster_columns = FALSE, row_names_gp = gpar(fontsize=4))
 
 
 compare <- function(formula, x, pheno) {
@@ -75,17 +96,17 @@ n.sub <- 80;
 dim(es.c6)
 
 # upregulated in parental, downregulated in resistant clones
-es.c6.sub <- es.c6[order(resistance.t)[1:n.sub], ]
+es.c6.up <- es.c6[order(resistance.t)[1:n.sub], ]
 
 pdf(tag(out.fname, c("gsva", "c6", "parental-up"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.sub, top_annotation = ha, cluster_col = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c6.up, top_annotation = ha, cluster_columns = FALSE, row_names_gp = gpar(fontsize=8));
 dev.off();
 
 # downregulated in parental, upregulated in resistant clones
-es.c6.sub <- es.c6[order(-resistance.t)[1:n.sub], ]
+es.c6.down <- es.c6[order(-resistance.t)[1:n.sub], ]
 
 pdf(tag(out.fname, c("gsva", "c6", "parental-down"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.sub, top_annotation = ha, cluster_col = FALSE, row_names_gp = gpar(fontsize=8))
+Heatmap(es.c6.down, top_annotation = ha, cluster_columns = FALSE, row_names_gp = gpar(fontsize=8))
 dev.off();
 
 # resistant clones have expression patterns indictative of

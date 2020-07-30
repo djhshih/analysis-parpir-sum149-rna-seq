@@ -1,13 +1,14 @@
 library(io)
 library(sva)
 
+source("../R/preamble.R")
+
 in.fname <- as.filename("parpi-resist_ltpm-genes-max.rds");
 out.fname <- insert(in.fname, "cb");
 
 x <- qread(in.fname);
 fannot <- qread("parpi-resist_fannot.rds");
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
-source("relevel-pheno.R");
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
 
 stopifnot(colnames(x) == as.character(pheno$sample_id))
 

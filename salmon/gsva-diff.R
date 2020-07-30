@@ -15,25 +15,15 @@ library(sva)
 # beginning in exon 2; no RNA expression of PTEN for all subsequent exons
 
 # TODO verify PTEN loss of function in RNAseq data
-# TODO check BRCA1 mutation status!
 
 in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clones-vs-parental.mtx");
 out.fname <- in.fname;
 out.fname$ext <- NULL;
 
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
-
-x <- qread(in.fname);
-
 mc.cores <- 4;
 
-read_msigdb <- function(collection, version="6.2") {
-	release <- gsub(".", "", version, fixed=TRUE);
-	qread(sprintf("~/data/msigdb/release-%s/%s.v%s.symbols.gmt", release, collection, version))
-}
-
-clone.cols <- brewer.pal(8, "Accent");
-names(clone.cols) <- levels(pheno$clone);
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+x <- qread(in.fname);
 
 #ha <- HeatmapAnnotation(
 #	df = select(pheno, clone, treatment, batch, lane, fold_resistance),
@@ -42,7 +32,6 @@ names(clone.cols) <- levels(pheno$clone);
 #		clone = clone.cols
 #	)
 #);
-
 
 gsets.h <- read_msigdb("h.all");
 

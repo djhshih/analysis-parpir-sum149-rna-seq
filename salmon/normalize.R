@@ -6,15 +6,15 @@ library(vsn)
 library(dplyr)
 library(reshape2)
 
+source("../R/premable.R")
+
 # cell line: SUM149
 
 out.fname <- filename("parpi-resist");
 
 x <- qread("parpi-resist_counts.rds");
 fannot <- qread("parpi-resist_fannot.rds");
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
-
-source("relevel-pheno.R");
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
 
 stopifnot(colnames(x) == as.character(pheno$sample_id))
 

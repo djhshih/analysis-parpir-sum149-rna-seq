@@ -21,19 +21,10 @@ in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clo
 out.fname <- in.fname;
 out.fname$ext <- NULL;
 
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
-
-x <- qread(in.fname);
-
 mc.cores <- 4;
 
-read_msigdb <- function(collection, version="6.2") {
-	release <- gsub(".", "", version, fixed=TRUE);
-	qread(sprintf("~/data/msigdb/release-%s/%s.v%s.symbols.gmt", release, collection, version))
-}
-
-clone.cols <- brewer.pal(8, "Accent");
-names(clone.cols) <- levels(pheno$clone);
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+x <- qread(in.fname);
 
 #ha <- HeatmapAnnotation(
 #	df = select(pheno, clone, treatment, batch, lane, fold_resistance),

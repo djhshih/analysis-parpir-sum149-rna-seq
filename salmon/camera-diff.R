@@ -7,6 +7,8 @@ library(ComplexHeatmap)
 library(RColorBrewer)
 library(sva)
 
+source("../R/preamble.R")
+
 # cell line: SUM149
 # triple negative, inflammatory breast cancer
 # disease progressed through chemotherapy
@@ -15,26 +17,16 @@ library(sva)
 # beginning in exon 2; no RNA expression of PTEN for all subsequent exons
 
 # TODO verify PTEN loss of function in RNAseq data
-# TODO check BRCA1 mutation status!
 
 in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clones-vs-parental.mtx");
 #in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clone_treated-vs-untreated.mtx");
 out.fname <- in.fname;
 out.fname$ext <- NULL;
 
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
-
-x <- qread(in.fname);
-
 mc.cores <- 4;
 
-read_msigdb <- function(collection, version="6.2") {
-	release <- gsub(".", "", version, fixed=TRUE);
-	qread(sprintf("~/data/msigdb/release-%s/%s.v%s.symbols.gmt", release, collection, version))
-}
-
-clone.cols <- brewer.pal(8, "Accent");
-names(clone.cols) <- levels(pheno$clone);
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+x <- qread(in.fname);
 
 #ha <- HeatmapAnnotation(
 #	df = select(pheno, clone, treatment, batch, lane, fold_resistance),
@@ -85,13 +77,13 @@ es.h <- camera_transform(y, gsets.h$data);
 
 summary(es.h)
 
-colf = circlize::colorRamp2(c(-10, 0, 10), c("blue", "white", "red"));
+colf <- circlize::colorRamp2(c(-10, 0, 10), c("blue", "white", "red"));
 
 
 pdf(tag(out.fname, c("camera", "h"), ext="pdf"), width=10, height=10);
-Heatmap(es.h, col=colf, cluster_col = FALSE)
+Heatmap(es.h, col=colf, cluster_columns = FALSE)
 dev.off();
-#Heatmap(es.h, top_annotation = ha, cluster_col = TRUE)
+#Heatmap(es.h, top_annotation = ha, cluster_columns = TRUE)
 
 es.h[grep("TNFA", rownames(es.h)), ]
 
@@ -123,7 +115,7 @@ gsets.c6 <- read_msigdb("c6.all");
 
 es.c6 <- camera_transform(y, gsets.c6$data);
 
-Heatmap(es.c6, col=colf, cluster_col = FALSE, row_names_gp = gpar(fontsize=4))
+Heatmap(es.c6, col=colf, cluster_columns = FALSE, row_names_gp = gpar(fontsize=4))
 
 dim(es.c6)
 hist(es.c6)
@@ -140,7 +132,7 @@ es.c6.sub <- es.c6[means > 1, , drop=FALSE]
 ha <- NULL;
 
 pdf(tag(out.fname, c("camera", "c6", "parental-up"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 dev.off();
 
 # downregulated in resistant clones
@@ -149,7 +141,7 @@ dev.off();
 es.c6.sub <- es.c6[means < -1, , drop=FALSE]
 
 pdf(tag(out.fname, c("camera", "c6", "parental-down"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8))
+Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8))
 dev.off();
 
 y["BMI1", ]
@@ -175,10 +167,10 @@ summary(es.c7)
 means <- rowMeans(es.c7)
 
 es.c7.sub <- es.c7[order(-means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 es.c7.sub <- es.c7[order(means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 #
 
@@ -191,11 +183,11 @@ summary(es.c3)
 means <- rowMeans(es.c3);
 
 es.c3.sub <- es.c3[order(-means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 es.c3.sub <- es.c3[order(means)[1:n.sub], , drop=FALSE]
 #es.c3.sub <- es.c3[means < -1, , drop=FALSE]
-Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 #
 
@@ -209,11 +201,11 @@ means <- rowMeans(es.c2);
 
 #es.c2.sub <- es.c2[order(-means)[1:n.sub], , drop=FALSE]
 es.c2.sub <- es.c2[means > 2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 #es.c2.sub <- es.c2[order(means)[1:n.sub], , drop=FALSE]
 es.c2.sub <- es.c2[means < -2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 #
 
@@ -228,9 +220,9 @@ means <- rowMeans(es.c2);
 
 #es.c2.sub <- es.c2[order(-means)[1:n.sub], , drop=FALSE]
 es.c2.sub <- es.c2[means > 2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
 #es.c2.sub <- es.c2[order(means)[1:n.sub], , drop=FALSE]
 es.c2.sub <- es.c2[means < -2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
 
