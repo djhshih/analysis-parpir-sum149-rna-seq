@@ -40,26 +40,23 @@ es.h <- gsva(x, gsets.h$data, parallel.sz=mc.cores);
 # KRAS signaling status gets reversed using plage...??!
 #es.h <- gsva(x, gsets.h$data, parallel.sz=mc.cores, method="plage");
 
-rename_hallmarks <- function(d) {
-	rownames(d)	 <- gsub("_", " ", sub("HALLMARK_", "", rownames(d)));
-	d
-}
-
-
 ha <- HeatmapAnnotation(
 	df = select(pheno,
-		#clone, treatment, batch, lane, fold_resistance
 		clone
 	),
 	col = list(
-		#treatment = c("None" = "grey60", "DMSO" = "grey30", "Talazoparib" = "royalblue"),
 		clone = clone.cols
-	)
+	),
+	annotation_legend_param = list(
+		clone = list(nrow = 1)
+	),
+	gp = gpar(col = "white")
 );
 
-pdf(tag(out.fname, c("gsva", "h"), ext="pdf"), width=12, height=8);
-Heatmap(
+pdf(tag(out.fname, c("gsva", "h"), ext="pdf"), width=8, height=10);
+hm <- Heatmap(
 	rename_hallmarks(es.h),
+	rect_gp = gpar(col = "white"),
 	top_annotation = ha,
 	column_gap = unit(3, "mm"),
 	clustering_method_rows = "average",
@@ -70,8 +67,10 @@ Heatmap(
 	row_dend_width = unit(20, "mm"),
 	col = rev(brewer.pal(9, "RdBu")),
 	border = TRUE,
+	heatmap_legend_param = list(direction = "horizontal"),
 	name = "enrichment score"
-)
+);
+draw(hm, merge_legend=TRUE, heatmap_legend_side = "bottom", annotation_legend_side = "bottom")
 dev.off();
 
 
