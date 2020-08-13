@@ -12,7 +12,9 @@ shift <- function(x, n=1) {
 diff.cols <- rev(brewer.pal(9, "RdBu"));
 diff.group.cols <- c(NS = "#333333", Down = diff.cols[1], Up = diff.cols[9]);
 
-clones <- c("Parental", "C2", "C17", "C19", "C20", "C26", "C29", "C30");
+clones.from <- c("Parental", "C2", "C17", "C19", "C20", "C26", "C29", "C30");
+clones <- c("P", "RC1", "RC2", "RC3", "RC4", "RC5", "RC6", "RC7");
+
 clone.cols <- shift(pal_d3()(length(clones)), -1);
 names(clone.cols) <- clones;
 
@@ -24,7 +26,7 @@ setup_pheno <- function(pheno) {
 	pheno$resistance <- relevel(pheno$resistance, "Sensitive");
 
 	# the parent clone is the reference
-	pheno$clone <- factor(pheno$clone, clones);
+	pheno$clone <- factor(pheno$clone, levels=clones.from, labels=clones);
 
 	pheno$flowcell <- factor(gsub("_.*", "", as.character(pheno$batch)));
 
