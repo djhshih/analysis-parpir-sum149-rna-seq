@@ -172,7 +172,7 @@ for (i in 1:length(clones.cams.h)) {
 	)
 }
 
-h.remove <- c(
+h.omit <- c(
 	"HALLMARK_ANGIOGENESIS",
 	"HALLMARK_INFLAMMATORY_RESONSE",
 	"HALLMARK_ALLOGRAFT_REJECTION",
@@ -182,7 +182,7 @@ h.remove <- c(
 
 c2.cam.h <- clones.cams.h$C2;
 c2.cam.h$gset <- rownames(c2.cam.h);
-c2.cam.h$gset[c2.cam.h$gset %in% h.remove] <- NA;
+c2.cam.h$gset[c2.cam.h$gset %in% h.omit] <- NA;
 
 qdraw(
 	cam_volcano_plot(c2.cam.h) + ggtitle("C2 vs. Parental")
@@ -282,9 +282,9 @@ Heatmap(es.c6.up, col=colf, top_annotation = ha, cluster_columns = FALSE, cluste
 dev.off();
 
 # downregulated in resistant clones
-#es.c6.sub <- es.c6[order(means)[1:n.sub], , drop=FALSE]
-es.c6.sub <- es.c6[means < -2, , drop=FALSE]
-#es.c6.down <- es.c6[means < -1, , drop=FALSE]
+#es.c6.down <- es.c6[order(means)[1:n.sub], , drop=FALSE]
+#es.c6.down <- es.c6[means < -2, , drop=FALSE]
+es.c6.down <- es.c6[means < -1, , drop=FALSE]
 
 pdf(tag(out.fname, c("camera", "c6", "parental-down"), ext="pdf"), width=10, height=15);
 Heatmap(es.c6.down, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8))

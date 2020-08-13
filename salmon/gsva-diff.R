@@ -7,6 +7,8 @@ library(ComplexHeatmap)
 library(RColorBrewer)
 library(sva)
 
+source("../R/preamble.R")
+
 # cell line: SUM149
 # triple negative, inflammatory breast cancer
 # disease progressed through chemotherapy
@@ -41,9 +43,9 @@ es.h <- gsva(x, gsets.h$data, parallel.sz=mc.cores, method="ssgsea");
 summary(es.h)
 
 pdf(tag(out.fname, c("gsva", "h"), ext="pdf"), width=10, height=10);
-Heatmap(es.h, cluster_col = FALSE)
+Heatmap(es.h, cluster_columns = FALSE)
 dev.off();
-#Heatmap(es.h, top_annotation = ha, cluster_col = TRUE)
+#Heatmap(es.h, top_annotation = ha, cluster_columns = TRUE)
 
 
 gsets.c6 <- read_msigdb("c6.all");
@@ -52,7 +54,7 @@ es.c6 <- gsva(x, gsets.c6$data, parallel.sz=mc.cores, method="ssgsea");
 
 colf = circlize::colorRamp2(c(-1, 0, 1), c("blue", "white", "red"));
 
-Heatmap(es.c6, col=colf, cluster_col = FALSE, row_names_gp = gpar(fontsize=4))
+Heatmap(es.c6, col=colf, cluster_columns = FALSE, row_names_gp = gpar(fontsize=4))
 
 dim(es.c6)
 hist(es.c6)
@@ -66,14 +68,14 @@ es.c6.sub <- es.c6[means > 0, , drop=FALSE]
 ha <- NULL;
 
 pdf(tag(out.fname, c("gsva", "c6", "parental-up"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 dev.off();
 
 # downregulated in resistant clones
 es.c6.sub <- es.c6[order(means)[1:n.sub], , drop=FALSE]
 
 pdf(tag(out.fname, c("gsva", "c6", "parental-down"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8))
+Heatmap(es.c6.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8))
 dev.off();
 
 # resistant clones have expression patterns indictative of
@@ -107,10 +109,10 @@ es.c7 <- gsva(x, gsets.c7$data, parallel.sz=mc.cores, method="ssgsea");
 means <- rowMeans(es.c7)
 
 es.c7.sub <- es.c7[means > 0, , drop=FALSE]
-Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 
 es.c7.sub <- es.c7[order(means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 
 #
 
@@ -123,10 +125,10 @@ summary(es.c3)
 means <- rowMeans(es.c3);
 
 es.c3.sub <- es.c3[order(means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 
 es.c3.sub <- es.c3[order(-means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 
 #
 
@@ -139,8 +141,8 @@ summary(es.c2)
 means <- rowMeans(es.c2);
 
 es.c2.sub <- es.c2[order(means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 
 es.c2.sub <- es.c2[order(-means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_col = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
+Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_row = FALSE, row_names_gp = gpar(fontsize=8));
 
