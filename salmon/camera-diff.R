@@ -45,7 +45,7 @@ na <- apply(x, 1, function(z) any(is.na(z)));
 y <- x[!na, ];
 
 # rename columns to clone names
-colnames(y) <- gsub("clone_(C\\d+)_vs_Parental", "\\1", colnames(y));
+colnames(y) <- rename_clones(gsub("clone_(C\\d+)_vs_Parental", "\\1", colnames(y)));
 # order columns
 y <- y[, clones[-1]];
 
@@ -165,7 +165,7 @@ overall.cam.h <- camera_single(overall, gsets.h$data);
 for (i in 1:length(clones.cams.h)) {
 	name <- names(clones.cams.h)[i];	
 	qdraw(
-		cam_volcano_plot(clones.cams.h[[i]]) + ggtitle(paste0(name, " vs. Parental"))
+		cam_volcano_plot(clones.cams.h[[i]]) + ggtitle(paste0(name, " vs. P"))
 		,
 		width = 8, height = 5,
 		file = insert(out.fname, c("camera", "volcano", tolower(name)), ext="pdf")
@@ -180,20 +180,19 @@ h.omit <- c(
 	"HALLMARK_UV_RESPONSE_UP"
 )
 
-c2.cam.h <- clones.cams.h$C2;
-c2.cam.h$gset <- rownames(c2.cam.h);
-c2.cam.h$gset[c2.cam.h$gset %in% h.omit] <- NA;
+rc1.cam.h <- clones.cams.h$RC1;
+rc1.cam.h$gset <- rownames(rc1.cam.h);
+rc1.cam.h$gset[rc1.cam.h$gset %in% h.omit] <- NA;
 
 qdraw(
-	cam_volcano_plot(c2.cam.h) + ggtitle("C2 vs. Parental")
+	cam_volcano_plot(rc1.cam.h) + ggtitle("RC1 vs. P")
 	,
 	width = 8, height = 5,
-	file = insert(out.fname, c("camera", "volcano", "c2", "sel"), ext="pdf")
+	file = insert(out.fname, c("camera", "volcano", "rc1", "sel"), ext="pdf")
 )
 
-
 qdraw(
-	cam_volcano_plot(overall.cam.h) + ggtitle("All resistant clones vs. Parental") +
+	cam_volcano_plot(overall.cam.h) + ggtitle("RCs vs. P") +
 		coord_cartesian(ylim=c(max(overall.cam.h$FDR), 1e-9))
 		#annotation_logticks(side="lr")
 	,
@@ -204,7 +203,7 @@ qdraw(
 cams.df <- do.call(rbind,
 	mapply(function(d, name) data.frame(comparison=name, gset=rownames(d), d),
 		c(list(overall.cam.h), clones.cams.h),
-		paste0(c("All resistant clones", names(clones.cams.h)), " vs. Parental"),
+		paste0(c("RCs", names(clones.cams.h)), " vs. P"),
 		SIMPLIFY=FALSE
 	)
 );
@@ -219,43 +218,72 @@ qdraw(
 
 ####
 
-es.h <- camera_transform(y, gsets.h$data);
-
-summary(es.h)
-
-colf <- circlize::colorRamp2(c(-10, 0, 10), c("blue", "white", "red"));
-
-
-pdf(tag(out.fname, c("camera", "h"), ext="pdf"), width=10, height=10);
-Heatmap(es.h, col=colf, cluster_columns = FALSE)
-dev.off();
-#Heatmap(es.h, top_annotation = ha, cluster_columns = TRUE)
-
-es.h[grep("TNFA", rownames(es.h)), ]
-
-library(ggplot2)
-
-plot_gene_set <- function(x, genes) {
-	y.sel <- y[rownames(y) %in% genes, ];
+plot_gene_set_density <- function(y, genes=NULL) {
+	if (is.null(genes)) {
+		y.sel <- y;
+	} else {
+		y.sel <- y[rownames(y) %in% genes, ];
+	}
 	y.sel.m <- melt(y.sel, varnames=c("gene", "comparison"));
-	ggplot(y.sel.m, aes(x=value, fill=comparison)) +
+
+	ggplot(y.sel.m, aes(x=value, fill=comparison)) + theme_clean() +
+		geom_vline(xintercept=0, colour="grey60", linetype=2) +
 		geom_density(alpha=0.5) +
-		facet_grid(comparison ~ .)
+		scale_fill_manual(values=clone.cols) +
+		facet_wrap(~ comparison, ncol=1) +
+		guides(fill=FALSE) +
+		xlab("standardized difference vs. parental") +
+		xlim(-10, 10)
 }
 
-genes <- gsets.h$data[[grep("TNFA", names(gsets.h$data))]];
-plot_gene_set(x, genes);
+plot.opts <- getOption("plot");
+options(plot = within(plot.opts, {width <- 3; height <- 6;}));
 
-genes <- gsets.h$data[[grep("OXIDATIVE", names(gsets.h$data))]];
-plot_gene_set(x, genes);
+qdraw(
+	plot_gene_set_density(y) + ggtitle("All genes")
+	,
+	file = insert(out.fname, c("gene-set-density", "all"), ext="pdf")
+)
 
-genes <- gsets.h$data[[grep("KRAS_SIGNALING_UP", names(gsets.h$data))]];
-plot_gene_set(x, genes);
+qdraw(
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_OXIDATIVE_PHOSPHORYLATION) +
+		ggtitle("Oxidative phosphorylation")
+	,
+	file = insert(out.fname, c("gene-set-density", "oxphos"), ext="pdf")
+)
 
-genes <- gsets.h$data[[grep("MESENCHYMAL", names(gsets.h$data))]];
-plot_gene_set(x, genes);
+qdraw(
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_KRAS_SIGNALING_UP) +
+		ggtitle("KRAS signaling")
+	,
+	file = insert(out.fname, c("gene-set-density", "nfkb"), ext="pdf")
+)
 
+qdraw(
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION) +
+		ggtitle("EMT pathway")
+	,
+	file = insert(out.fname, c("gene-set-density", "emt"), ext="pdf")
+)
 
+qdraw(
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_TNFA_SIGNALING_VIA_NFK) +
+		ggtitle("NF-κB signaling")
+	,
+	file = insert(out.fname, c("gene-set-density", "nfkb"), ext="pdf")
+)
+
+qdraw(
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_DNA_REPAIR) +
+		ggtitle("DNA repair")
+	,
+	file = insert(out.fname, c("gene-set-density", "dna-repair"), ext="pdf")
+)
+
+# restore default plot options
+options(plot = plot.opts);
+
+####
 
 gsets.c6 <- read_msigdb("c6.all");
 
