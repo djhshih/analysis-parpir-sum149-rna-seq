@@ -15,6 +15,10 @@ diff.group.cols <- c(NS = "#333333", Down = diff.cols[1], Up = diff.cols[9]);
 clones.from <- c("Parental", "C2", "C17", "C19", "C20", "C26", "C29", "C30");
 clones <- c("P", "RC1", "RC2", "RC3", "RC4", "RC5", "RC6", "RC7");
 
+rename_clones <- function(x) {
+	as.character(factor(x, levels=clones.from, labels=clones))
+}
+
 clone.cols <- shift(pal_d3()(length(clones)), -1);
 names(clone.cols) <- clones;
 
@@ -93,3 +97,15 @@ revlog_trans <- function(base = exp(1)) {
 						log_breaks(base = base), 
 						domain = c(1e-100, Inf))
 }
+
+theme_clean <- function() {
+	library(ggplot2)
+
+	theme_bw() +
+	theme(
+		strip.background = element_blank(),
+		panel.grid.major = element_blank(),
+		panel.grid.minor = element_blank()
+	)
+}
+
