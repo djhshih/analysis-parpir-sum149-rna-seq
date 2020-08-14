@@ -22,7 +22,6 @@ source("../R/preamble.R")
 in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clones-vs-parental.mtx");
 #in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clone_treated-vs-untreated.mtx");
 
-
 out.fname <- in.fname;
 out.fname$ext <- NULL;
 
@@ -33,14 +32,7 @@ x <- qread(in.fname);
 
 overall <- qread("parpi-resist_resistance.rnk");
 
-#ha <- HeatmapAnnotation(
-#	df = select(pheno, clone, treatment, batch, lane, fold_resistance),
-#	col = list(
-#		treatment = c("DMSO" = "grey30", "None" = "grey60", "Talazoparib" = "royalblue"),
-#		clone = clone.cols
-#	)
-#);
-
+# remove genes with NA statistic
 na <- apply(x, 1, function(z) any(is.na(z)));
 y <- x[!na, ];
 
@@ -50,15 +42,9 @@ colnames(y) <- rename_clones(gsub("clone_(C\\d+)_vs_Parental", "\\1", colnames(y
 y <- y[, clones[-1]];
 
 
+####
+
 gsets.h <- read_msigdb("h.all");
-
-#d <- data.frame(comparison = c(colnames(x), "Parental"));
-#d$reference <- 0;
-#d$reference[d$comparison != "Parental"] <- 1;
-
-#design <- model.matrix(~ reference, data=d);
-
-#gset <- gsets.h$data$HALLMARK_KRAS_SIGNALING_UP;
 
 camera_single <- function(s, gsets=NULL, index=NULL) {
 	if (is.null(index)) {
@@ -121,16 +107,7 @@ camera_transform <- function(y, gsets) {
 	res
 }
 
-
-theme_clean <- function() {
-	theme_bw() +
-		theme(
-			strip.background = element_blank(),
-			panel.grid = element_blank()
-		)
-}
-
-cam_volcano_plot <- function(cam, fdr.cut=0.01, z.cut=0.5, label.size=4) {
+cam_volcano_plot <- function(cam, fdr.cut=0.01, z.cut=0.5, label.size=4, rename_gset=identity) {
 	if (is.null(cam$gset)) {
 		cam$gset = rownames(cam);
 	}
@@ -141,7 +118,7 @@ cam_volcano_plot <- function(cam, fdr.cut=0.01, z.cut=0.5, label.size=4) {
 			ifelse(keep, ifelse(delta < 0, "Down", "Up"), "NS"),
 			c("Down", "Up", "NS")
 		),
-		gset = rename_hallmarks(gset)
+		gset = rename_gset(gset)
 	);
 
 	ggplot(cam, aes(x=z1, y=FDR, alpha=keep, colour=group, label=ifelse(keep, gset, NA))) +
@@ -158,14 +135,23 @@ cam_volcano_plot <- function(cam, fdr.cut=0.01, z.cut=0.5, label.size=4) {
 		xlim(-2, 2)
 }
 
+overall.cam.h <- camera_single(overall, gsets.h$data);
+
+qdraw(
+	cam_volcano_plot(overall.cam.h, rename_gset=rename_hallmarks) + ggtitle("RCs vs. P") +
+		coord_cartesian(ylim=c(max(overall.cam.h$FDR), 1e-9))
+		#annotation_logticks(side="lr")
+	,
+	width = 8, height = 5,
+	file = insert(out.fname, c("camera", "volcano", "all"), ext="pdf")
+)
 
 clones.cams.h <- camera_batch(y, gsets.h$data);
-overall.cam.h <- camera_single(overall, gsets.h$data);
 
 for (i in 1:length(clones.cams.h)) {
 	name <- names(clones.cams.h)[i];	
 	qdraw(
-		cam_volcano_plot(clones.cams.h[[i]]) + ggtitle(paste0(name, " vs. P"))
+		cam_volcano_plot(clones.cams.h[[i]], rename_gset=rename_hallmarks) + ggtitle(paste0(name, " vs. P"))
 		,
 		width = 8, height = 5,
 		file = insert(out.fname, c("camera", "volcano", tolower(name)), ext="pdf")
@@ -182,22 +168,13 @@ h.omit <- c(
 
 rc1.cam.h <- clones.cams.h$RC1;
 rc1.cam.h$gset <- rownames(rc1.cam.h);
-rc1.cam.h$gset[rc1.cam.h$gset %in% h.omit] <- NA;
+rc1.cam.h$gset[rc1.cam.h %in% h.omit] <- NA;
 
 qdraw(
-	cam_volcano_plot(rc1.cam.h) + ggtitle("RC1 vs. P")
+	cam_volcano_plot(rc1.cam.h, rename_gset=rename_hallmarks) + ggtitle("RC1 vs. P")
 	,
 	width = 8, height = 5,
 	file = insert(out.fname, c("camera", "volcano", "rc1", "sel"), ext="pdf")
-)
-
-qdraw(
-	cam_volcano_plot(overall.cam.h) + ggtitle("RCs vs. P") +
-		coord_cartesian(ylim=c(max(overall.cam.h$FDR), 1e-9))
-		#annotation_logticks(side="lr")
-	,
-	width = 8, height = 5,
-	file = insert(out.fname, c("camera", "volcano", "all"), ext="pdf")
 )
 
 cams.df <- do.call(rbind,
@@ -210,7 +187,8 @@ cams.df <- do.call(rbind,
 rownames(cams.df) <- NULL;
 
 qdraw(
-	cam_volcano_plot(cams.df, label.size=2.5) + facet_wrap(~ comparison, ncol=2)
+	cam_volcano_plot(cams.df, rename_gset=rename_hallmarks, label.size=2.5) + 
+		facet_wrap(~ comparison, ncol=2)
 	,
 	width = 8, height = 11,
 	file = insert(out.fname, c("camera", "volcano", "each"), ext="pdf")
@@ -287,116 +265,107 @@ options(plot = plot.opts);
 
 gsets.c6 <- read_msigdb("c6.all");
 
-es.c6 <- camera_transform(y, gsets.c6$data);
+overall.cam.c6 <- camera_single(overall, gsets.c6$data);
 
-Heatmap(es.c6, col=colf, cluster_columns = FALSE, row_names_gp = gpar(fontsize=4))
+qdraw(
+	cam_volcano_plot(overall.cam.c6, label.size=2.5) + ggtitle("RCs vs. P")
+	,
+	width = 8, height = 5,
+	file = insert(out.fname, c("camera", "c6", "volcano", "all"), ext="pdf")
+)
 
-dim(es.c6)
-#hist(es.c6)
-summary(es.c6)
+clones.cams.c6 <- camera_batch(y, gsets.c6$data);
 
-means <- rowMeans(es.c6);
-summary(means)
-n.sub <- 80;
+for (i in 1:length(clones.cams.c6)) {
+	name <- names(clones.cams.c6)[i];	
+	qdraw(
+		cam_volcano_plot(clones.cams.c6[[i]], label.size=2.5) + ggtitle(paste0(name, " vs. P"))
+		,
+		width = 8, height = 5,
+		file = insert(out.fname, c("camera", "c6", "volcano", tolower(name)), ext="pdf")
+	)
+}
 
-# upregulated in resistant clones
-#es.c6.up <- es.c6[means > 0, , drop=FALSE]
-es.c6.up <- es.c6[means > 1, , drop=FALSE]
+rc1.cam.c6 <- clones.cams.c6$RC1;
+rc1.cam.c6$gset <- rownames(rc1.cam.c6);
+rc1.cam.c6$gset[-grep("KRAS", rownames(rc1.cam.c6))] <- NA;
 
-ha <- NULL;
+qdraw(
+	cam_volcano_plot(rc1.cam.c6, label.size=2.5) + ggtitle("RC1 vs. P")
+	,
+	width = 8, height = 5,
+	file = insert(out.fname, c("camera", "c6", "volcano", "rc1", "sel"), ext="pdf")
+)
 
-pdf(tag(out.fname, c("camera", "c6", "parental-up"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.up, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
-dev.off();
+# Results summary
 
-# downregulated in resistant clones
-#es.c6.down <- es.c6[order(means)[1:n.sub], , drop=FALSE]
-#es.c6.down <- es.c6[means < -2, , drop=FALSE]
-es.c6.down <- es.c6[means < -1, , drop=FALSE]
+# resistance clones:
+# - downregulate EGFR signaling
+# - downregulating NFkappaB signaling
+# - suppress response to BMI1 downregulation
+# - downregulating KRAS signaling
+# - suppress gene expression associated with KRAS dependency
+# - suppress signaling in response to STK33 knockdown
+# - suppress IL2, IL15 signaling
 
-pdf(tag(out.fname, c("camera", "c6", "parental-down"), ext="pdf"), width=10, height=15);
-Heatmap(es.c6.down, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8))
-dev.off();
-
-y["BMI1", ]
-
-# downregulate EGFR signaling
-# downregulating NFkappaB signaling
-# BMI downregulation
-# suppress response to BMI1 downregulation
-# downregulating KRAS signaling
-# suppress gene expression associated with KRAS dependency
-
-# suppress signaling in response to STK33 knockdown
-# suppress IL2, IL15 signaling
-
-
+####
 
 gsets.c7 <- read_msigdb("c7.all");
 
-es.c7 <- camera_transform(y, gsets.c7$data);
+overall.cam.c7 <- camera_single(overall, gsets.c7$data);
 
-summary(es.c7)
+qdraw(
+	cam_volcano_plot(overall.cam.c7, label.size=2.5) + ggtitle("RCs vs. P") +
+		coord_cartesian(ylim=c(max(overall.cam.c7$FDR), 1e-5))
+	,
+	width = 8, height = 5,
+	file = insert(out.fname, c("camera", "c7", "volcano", "all"), ext="pdf")
+)
 
-means <- rowMeans(es.c7)
-
-es.c7.sub <- es.c7[order(-means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
-
-es.c7.sub <- es.c7[order(means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c7.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
-
-#
+####
 
 gsets.c3 <- read_msigdb("c3.tft");
 
-es.c3 <- camera_transform(y, gsets.c3$data);
+overall.cam.c3 <- camera_single(overall, gsets.c3$data);
 
-summary(es.c3)
+# Enriched KRCTCNNNNMANAGC and TTTNNANAGCYR motif may be bound by ILF3 (DRBP76)
+# https://www.ncbi.nlm.nih.gov/pubmed/20668518
+# ILF3 is involved in interleukin signaling
 
-means <- rowMeans(es.c3);
+qdraw(
+	cam_volcano_plot(overall.cam.c3, label.size=2.5) + ggtitle("RCs vs. P")
+	,
+	width = 8, height = 5,
+	file = insert(out.fname, c("camera", "c3", "volcano", "all"), ext="pdf")
+)
 
-es.c3.sub <- es.c3[order(-means)[1:n.sub], , drop=FALSE]
-Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
+####
 
-es.c3.sub <- es.c3[order(means)[1:n.sub], , drop=FALSE]
-#es.c3.sub <- es.c3[means < -1, , drop=FALSE]
-Heatmap(es.c3.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
+gsets.c2.cgp <- read_msigdb("c2.cgp");
 
-#
+overall.cam.c2.cgp <- camera_single(overall, gsets.c2.cgp$data);
 
-gsets.c2 <- read_msigdb("c2.cgp");
+qdraw(
+	cam_volcano_plot(overall.cam.c2.cgp, label.size=2.5) + ggtitle("RCs vs. P") +
+		coord_cartesian(ylim=c(max(overall.cam.c2.cgp$FDR), 1e-9))
+	,
+	width = 8, height = 10,
+	file = insert(out.fname, c("camera", "c2-cgp", "volcano", "all"), ext="pdf")
+)
 
-es.c2 <- camera_transform(y, gsets.c2$data);
+####
 
-summary(es.c2)
+gsets.c2.cp <- read_msigdb("c2.cp");
 
-means <- rowMeans(es.c2);
+overall.cam.c2.cp <- camera_single(overall, gsets.c2.cp$data);
 
-#es.c2.sub <- es.c2[order(-means)[1:n.sub], , drop=FALSE]
-es.c2.sub <- es.c2[means > 2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
+qdraw(
+	cam_volcano_plot(overall.cam.c2.cp, label.size=2.5) + ggtitle("RCs vs. P") +
+		coord_cartesian(ylim=c(max(overall.cam.c2.cp$FDR), 1e-9))
+	,
+	width = 8, height = 10,
+	file = insert(out.fname, c("camera", "c2-cp", "volcano", "all"), ext="pdf")
+)
 
-#es.c2.sub <- es.c2[order(means)[1:n.sub], , drop=FALSE]
-es.c2.sub <- es.c2[means < -2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
-
-#
-
-gsets.c2 <- read_msigdb("c2.cp");
-
-es.c2 <- camera_transform(y, gsets.c2$data);
-
-summary(es.c2)
-
-means <- rowMeans(es.c2);
-#maxes <- apply(es.c2, 1, function(z) max(abs(z)));
-
-#es.c2.sub <- es.c2[order(-means)[1:n.sub], , drop=FALSE]
-es.c2.sub <- es.c2[means > 2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
-
-#es.c2.sub <- es.c2[order(means)[1:n.sub], , drop=FALSE]
-es.c2.sub <- es.c2[means < -2, , drop=FALSE]
-Heatmap(es.c2.sub, col=colf, top_annotation = ha, cluster_columns = FALSE, cluster_rows = FALSE, row_names_gp = gpar(fontsize=8));
+graphics.off()
 

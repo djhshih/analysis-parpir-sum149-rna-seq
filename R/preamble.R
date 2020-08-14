@@ -104,8 +104,7 @@ theme_clean <- function() {
 	theme_bw() +
 	theme(
 		strip.background = element_blank(),
-		panel.grid.major = element_blank(),
-		panel.grid.minor = element_blank()
+		panel.grid = element_blank()
 	)
 }
 
