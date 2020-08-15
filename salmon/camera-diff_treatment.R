@@ -11,17 +11,8 @@ library(ggrepel)
 source("../R/preamble.R")
 source("../R/camera.R")
 
-# cell line: SUM149
-# triple negative, inflammatory breast cancer
-# disease progressed through chemotherapy
-# mutation: BRCA1 p.P724fs*12
-# microamplification in PTEN exon 2 leads to truncated PTEN transcript
-# beginning in exon 2; no RNA expression of PTEN for all subsequent exons
-
-# TODO verify PTEN loss of function in RNAseq data
-
-overall <- qread("parpi-resist_resistance.rnk");
-in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clones-vs-parental.mtx");
+overall <- qread("parpi-resist_treatment.rnk");
+in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clone_treated-vs-untreated.mtx");
 
 out.fname <- in.fname;
 out.fname$ext <- NULL;
@@ -48,28 +39,6 @@ gsets.h <- read_msigdb("h.all");
 
 overall.cam.h <- camera_single(overall, gsets.h$data);
 
-qdraw(
-	cam_volcano_plot(overall.cam.h, rename_gset=rename_hallmarks) + ggtitle("RCs vs. P") +
-		coord_cartesian(ylim=c(max(overall.cam.h$FDR), 1e-9)) + xlim(-2, 2)
-		#annotation_logticks(side="lr")
-	,
-	width = 8, height = 5,
-	file = insert(out.fname, c("camera", "volcano", "all"), ext="pdf")
-)
-
-clones.cams.h <- camera_batch(y, gsets.h$data);
-
-for (i in 1:length(clones.cams.h)) {
-	name <- names(clones.cams.h)[i];	
-	qdraw(
-		cam_volcano_plot(clones.cams.h[[i]], rename_gset=rename_hallmarks) + 
-			ggtitle(paste0(name, " vs. P")) + xlim(-2, 2)
-		,
-		width = 8, height = 5,
-		file = insert(out.fname, c("camera", "volcano", tolower(name)), ext="pdf")
-	)
-}
-
 h.omit <- c(
 	"HALLMARK_ANGIOGENESIS",
 	"HALLMARK_INFLAMMATORY_RESPONSE",
@@ -84,9 +53,35 @@ h.omit <- c(
 	"HALLMARK_COAGULATION"
 );
 
+overall.cam.h$gset <- rownames(overall.cam.h);
+overall.cam.h$gset[overall.cam.h$gset %in% h.omit] <- NA;
+
+qdraw(
+	cam_volcano_plot(overall.cam.h, rename_gset=rename_hallmarks) + ggtitle("RCs vs. P") +
+		xlim(-2, 2)
+	,
+	width = 8, height = 5,
+	file = insert(out.fname, c("camera", "volcano", "all"), ext="pdf")
+)
+
+overall.cam.h$gset <- NULL;
+
+clones.cams.h <- camera_batch(y, gsets.h$data);
+
+for (i in 1:length(clones.cams.h)) {
+	name <- names(clones.cams.h)[i];	
+	qdraw(
+		cam_volcano_plot(clones.cams.h[[i]], rename_gset=rename_hallmarks) + 
+			ggtitle(paste0(name, " vs. P")) + xlim(-2, 2)
+		,
+		width = 8, height = 5,
+		file = insert(out.fname, c("camera", "volcano", tolower(name)), ext="pdf")
+	)
+}
+
 rc1.cam.h <- clones.cams.h$RC1;
-rc1.cam.h$gset <- rownames(rc1.cam.h);
-rc1.cam.h$gset[rc1.cam.h$gset %in% h.omit] <- NA;
+#rc1.cam.h$gset <- rownames(rc1.cam.h);
+#rc1.cam.h$gset[rc1.cam.h %in% h.omit] <- NA;
 
 qdraw(
 	cam_volcano_plot(rc1.cam.h, rename_gset=rename_hallmarks) + 
@@ -125,10 +120,17 @@ qdraw(
 )
 
 qdraw(
-	plot_gene_set_density(y, gsets.h$data$HALLMARK_OXIDATIVE_PHOSPHORYLATION) +
-		ggtitle("Oxidative phosphorylation") + xlim(-6, 6)
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_E2F_TARGETS) +
+		ggtitle("E2F targets") + xlim(-6, 6)
 	,
-	file = insert(out.fname, c("gene-set-density", "oxphos"), ext="pdf")
+	file = insert(out.fname, c("gene-set-density", "e2f"), ext="pdf")
+)
+
+qdraw(
+	plot_gene_set_density(y, gsets.h$data$HALLMARK_G2M_CHECKPOINT) +
+		ggtitle("G2M checkpoint") + xlim(-6, 6)
+	,
+	file = insert(out.fname, c("gene-set-density", "g2m-checkpoint"), ext="pdf")
 )
 
 qdraw(
@@ -187,41 +189,12 @@ for (i in 1:length(clones.cams.c6)) {
 	)
 }
 
-rc1.cam.c6 <- clones.cams.c6$RC1;
-rc1.cam.c6$gset <- rownames(rc1.cam.c6);
-rc1.cam.c6$gset[-grep("KRAS", rownames(rc1.cam.c6))] <- NA;
-
-qdraw(
-	cam_volcano_plot(rc1.cam.c6, label.size=2.5) + ggtitle("RC1 vs. P")
-	,
-	width = 8, height = 5,
-	file = insert(out.fname, c("camera", "c6", "volcano", "rc1", "sel"), ext="pdf")
-)
-
-# Results summary
-
-# resistance clones:
-# - downregulate EGFR signaling
-# - downregulating NFkappaB signaling
-# - suppress response to BMI1 downregulation
-# - downregulating KRAS signaling
-# - suppress gene expression associated with KRAS dependency
-# - suppress signaling in response to STK33 knockdown
-# - suppress IL2, IL15 signaling
-
 ####
 
-gsets.c7 <- read_msigdb("c7.all");
+# too many to visualize!
 
-overall.cam.c7 <- camera_single(overall, gsets.c7$data);
-
-qdraw(
-	cam_volcano_plot(overall.cam.c7, label.size=2.5) + ggtitle("RCs vs. P") +
-		coord_cartesian(ylim=c(max(overall.cam.c7$FDR), 1e-5))
-	,
-	width = 8, height = 5,
-	file = insert(out.fname, c("camera", "c7", "volcano", "all"), ext="pdf")
-)
+#gsets.c7 <- read_msigdb("c7.all");
+#overall.cam.c7 <- camera_single(overall, gsets.c7$data);
 
 ####
 
@@ -234,7 +207,8 @@ overall.cam.c3 <- camera_single(overall, gsets.c3$data);
 # ILF3 is involved in interleukin signaling
 
 qdraw(
-	cam_volcano_plot(overall.cam.c3, label.size=2.5) + ggtitle("RCs vs. P")
+	cam_volcano_plot(overall.cam.c3, label.size=2.5) + ggtitle("RCs vs. P") +
+		coord_cartesian(ylim=c(max(overall.cam.c3$FDR), 1e-4))
 	,
 	width = 8, height = 5,
 	file = insert(out.fname, c("camera", "c3", "volcano", "all"), ext="pdf")
@@ -242,31 +216,19 @@ qdraw(
 
 ####
 
-gsets.c2.cgp <- read_msigdb("c2.cgp");
+# too many to visualize!
 
-overall.cam.c2.cgp <- camera_single(overall, gsets.c2.cgp$data);
+#gsets.c2.cgp <- read_msigdb("c2.cgp");
 
-qdraw(
-	cam_volcano_plot(overall.cam.c2.cgp, label.size=2.5) + ggtitle("RCs vs. P") +
-		coord_cartesian(ylim=c(max(overall.cam.c2.cgp$FDR), 1e-9))
-	,
-	width = 8, height = 10,
-	file = insert(out.fname, c("camera", "c2-cgp", "volcano", "all"), ext="pdf")
-)
+#overall.cam.c2.cgp <- camera_single(overall, gsets.c2.cgp$data);
 
 ####
 
-gsets.c2.cp <- read_msigdb("c2.cp");
+# too many to visualize!
 
-overall.cam.c2.cp <- camera_single(overall, gsets.c2.cp$data);
+#gsets.c2.cp <- read_msigdb("c2.cp");
 
-qdraw(
-	cam_volcano_plot(overall.cam.c2.cp, label.size=2.5) + ggtitle("RCs vs. P") +
-		coord_cartesian(ylim=c(max(overall.cam.c2.cp$FDR), 1e-9))
-	,
-	width = 8, height = 10,
-	file = insert(out.fname, c("camera", "c2-cp", "volcano", "all"), ext="pdf")
-)
+#overall.cam.c2.cp <- camera_single(overall, gsets.c2.cp$data);
 
 graphics.off()
 
