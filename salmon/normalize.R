@@ -6,7 +6,7 @@ library(vsn)
 library(dplyr)
 library(reshape2)
 
-source("../R/premable.R")
+source("../R/preamble.R")
 
 # cell line: SUM149
 
@@ -29,6 +29,9 @@ deseqresults_to_rnk <- function(res, fannot) {
 }
 
 #----
+
+# compare all levels against DMSO
+pheno$treatment <- relevel(pheno$treatment, "DMSO");
 
 dds.treatment <- DESeqDataSetFromMatrix(
 	countData = counts, colData = pheno,
@@ -55,7 +58,7 @@ as.data.frame(cbind(fannot[txs.up, "gene_name"], res.sf[txs.up, ]))
 txs.down <- rownames(res.sf)[res.sf$log2FoldChange < -1];
 as.data.frame(cbind(fannot[txs.down, "gene_name"], res.sf[txs.down, ]))
 
-#----
+####
 
 dds.resistance <- DESeqDataSetFromMatrix(
 	countData = counts, colData = pheno,
@@ -82,7 +85,7 @@ as.data.frame(cbind(fannot[txs.up, "gene_name"], res.sf[txs.up, ]))
 txs.down <- rownames(res.sf)[res.sf$log2FoldChange < -1];
 as.data.frame(cbind(fannot[txs.down, "gene_name"], res.sf[txs.down, ]))
 
-#----
+####
 
 dds.treatment.b.clone <- DESeqDataSetFromMatrix(
 	countData = counts, colData = pheno,
@@ -150,6 +153,9 @@ rnks <- lapply(contrasts.clones,
 		rnk
 	}
 );
+
+# collect all the main clone effects together,
+# ensuring that the genes are in the correct order
 
 rnk2.mtx <- do.call(cbind, lapply(rnks, function(x) x[[2]][match(genes, x[[1]])] ));
 rownames(rnk2.mtx) <- genes;
