@@ -11,7 +11,8 @@ library(ggrepel)
 source("../R/preamble.R")
 source("../R/camera.R")
 
-overall <- qread("parpi-resist_treatment.rnk");
+overall <- qread("parpi-resist_treatment-clone_treatment.rnk");
+parental <- qread("parpi-resist_treatment-clone-interaction_treatment.rnk");
 in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clone_treated-vs-untreated.mtx");
 
 out.fname <- in.fname;
@@ -32,6 +33,8 @@ colnames(y) <- rename_clones(gsub(".*clone_?(C\\d+).*", "\\1", colnames(y)));
 # order columns
 y <- y[, clones[-1]];
 
+parental <- parental[match(rownames(y), names(parental))];
+y <- cbind(P = parental, y);
 
 ####
 
@@ -72,29 +75,18 @@ for (i in 1:length(clones.cams.h)) {
 	name <- names(clones.cams.h)[i];	
 	qdraw(
 		cam_volcano_plot(clones.cams.h[[i]], rename_gset=rename_hallmarks) + 
-			ggtitle(paste0(name, " vs. P")) + xlim(-2, 2)
+			ggtitle(paste0("Talazoparib vs. DMSO in ", name)) + xlim(-2, 2)
 		,
 		width = 8, height = 5,
 		file = insert(out.fname, c("camera", "volcano", tolower(name)), ext="pdf")
 	)
 }
 
-rc1.cam.h <- clones.cams.h$RC1;
-#rc1.cam.h$gset <- rownames(rc1.cam.h);
-#rc1.cam.h$gset[rc1.cam.h %in% h.omit] <- NA;
-
-qdraw(
-	cam_volcano_plot(rc1.cam.h, rename_gset=rename_hallmarks) + 
-		ggtitle("RC1 vs. P") + xlim(-2, 2)
-	,
-	width = 8, height = 5,
-	file = insert(out.fname, c("camera", "volcano", "rc1", "sel"), ext="pdf")
-)
-
 cams.df <- do.call(rbind,
-	mapply(function(d, name) data.frame(comparison=name, gset=rownames(d), d),
-		c(list(overall.cam.h), clones.cams.h),
-		paste0(c("RCs", names(clones.cams.h)), " vs. P"),
+	mapply(
+		function(d, name) data.frame(comparison=name, gset=rownames(d), d),
+		clones.cams.h,
+		paste0("Talazoparib vs. DMSO in ", names(clones.cams.h)),
 		SIMPLIFY=FALSE
 	)
 );

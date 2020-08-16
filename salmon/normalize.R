@@ -121,6 +121,18 @@ hist(rnk.mtx, breaks=1000)
 
 qwrite(rnk.mtx, insert(out.fname, c("deseq-stat", "clones-vs-parental"), ext="mtx"));
 
+#
+
+# overall treatment effect across parental and all resistant clones
+res <- results(dds.treatment.b.clone, name="treatment_Talazoparib_vs_DMSO");
+qwrite(res, insert(out.fname, c("deseq-res", "treatment-clone", "treatment"), ext="rds"));
+
+rnk <- deseqresults_to_rnk(res, fannot)
+qwrite(rnk, insert(out.fname, c("treatment-clone", "treatment"), ext="rnk"));
+
+#
+
+
 #----
 
 # remove treatment = None in order to make full rank design matrix
@@ -169,6 +181,7 @@ qwrite(rnk2.mtx, insert(out.fname, c("deseq-stat", "treatment-clone-interaction"
 
 #
 
+# treatment effect in parental
 res <- results(dds.treatment.c.clone, name="treatment_Talazoparib_vs_DMSO");
 qwrite(res, insert(out.fname, c("deseq-res", "treatment-clone-interaction", "treatment"), ext="rds"));
 
