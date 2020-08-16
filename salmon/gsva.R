@@ -23,7 +23,7 @@ mc.cores <- 4;
 
 
 x <- qread(in.fname);
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 
 # arrange samples in order to clones
 idx <- order(pheno$clone);
@@ -112,15 +112,15 @@ dev.off();
 # resistant clones have expression patterns indictative of
 # - KRAS deactivation
 # - beta-catenin deactivation
-# - BMI1 activation
+# - Aborgation of upregulated transcriptional program in response to BMI1 and MEL18 knockdown
 # but not every clone response the same!
 
 # heterogeneous expression patterns associated with
 # - PTEN signaling
-# - MTRO signaling
+# - MTOR signaling
 
 # "Loss of Mel-18 enhances breast cancer stem cell activity and tumorigenicity through activating Notch signaling mediated by the Wnt/TCF pathway"
-# MEL18 (BMI1) -| Wnt signaling -> stemness
+# MEL18 -| Wnt signaling -> stemness
 
 # "β-Catenin Is Required for the Tumorigenic Behavior of Triple-Negative Breast Cancer Cells"
 # Beta-catenin knockdown -| stem-like population

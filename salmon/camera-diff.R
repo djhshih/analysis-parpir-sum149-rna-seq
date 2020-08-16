@@ -28,7 +28,7 @@ out.fname$ext <- NULL;
 
 mc.cores <- 4;
 
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 x <- qread(in.fname);
 
 

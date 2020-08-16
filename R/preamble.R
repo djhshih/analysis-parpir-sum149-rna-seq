@@ -22,7 +22,7 @@ rename_clones <- function(x) {
 clone.cols <- shift(pal_d3()(length(clones)), -1);
 names(clone.cols) <- clones;
 
-setup_pheno <- function(pheno) {
+setup_pheno <- function(pheno, rename.clones=FALSE) {
 	# DMSO is the reference
 	pheno$treatment = factor(pheno$treatment, levels=c("None", "DMSO", "Talazoparib"));
 
@@ -30,7 +30,11 @@ setup_pheno <- function(pheno) {
 	pheno$resistance <- relevel(pheno$resistance, "Sensitive");
 
 	# the parent clone is the reference
-	pheno$clone <- factor(pheno$clone, levels=clones.from, labels=clones);
+	if (rename.clones) {
+		pheno$clone <- factor(pheno$clone, levels=clones.from, labels=clones);
+	} else {
+		pheno$clone <- factor(pheno$clone, levels=clones.from);
+	}
 
 	pheno$flowcell <- factor(gsub("_.*", "", as.character(pheno$batch)));
 
