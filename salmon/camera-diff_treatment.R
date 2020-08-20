@@ -19,6 +19,7 @@ out.fname <- in.fname;
 out.fname$ext <- NULL;
 
 mc.cores <- 4;
+fdr.cut <- 0.05;
 
 pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 x <- qread(in.fname);
@@ -60,7 +61,7 @@ overall.cam.h$gset <- rownames(overall.cam.h);
 overall.cam.h$gset[overall.cam.h$gset %in% h.omit] <- NA;
 
 qdraw(
-	cam_volcano_plot(overall.cam.h, rename_gset=rename_hallmarks) + ggtitle("RCs vs. P") +
+	cam_volcano_plot(overall.cam.h, rename_gset=rename_hallmarks, fdr.cut=fdr.cut) + ggtitle("Talazoparib vs. DMSO") +
 		xlim(-2, 2)
 	,
 	width = 8, height = 5,
@@ -74,7 +75,7 @@ clones.cams.h <- camera_batch(y, gsets.h$data);
 for (i in 1:length(clones.cams.h)) {
 	name <- names(clones.cams.h)[i];	
 	qdraw(
-		cam_volcano_plot(clones.cams.h[[i]], rename_gset=rename_hallmarks) + 
+		cam_volcano_plot(clones.cams.h[[i]], rename_gset=rename_hallmarks, fdr.cut=fdr.cut) + 
 			ggtitle(paste0("Talazoparib vs. DMSO in ", name)) + xlim(-2, 2)
 		,
 		width = 8, height = 5,
@@ -93,7 +94,7 @@ cams.df <- do.call(rbind,
 rownames(cams.df) <- NULL;
 
 qdraw(
-	cam_volcano_plot(cams.df, rename_gset=rename_hallmarks, label.size=2.5) + 
+	cam_volcano_plot(cams.df, rename_gset=rename_hallmarks, label.size=2.5, fdr.cut=fdr.cut) + 
 		facet_wrap(~ comparison, ncol=2) + xlim(-2, 2)
 	,
 	width = 8, height = 11,
@@ -163,7 +164,7 @@ gsets.c6 <- read_msigdb("c6.all");
 overall.cam.c6 <- camera_single(overall, gsets.c6$data);
 
 qdraw(
-	cam_volcano_plot(overall.cam.c6, label.size=2.5) + ggtitle("RCs vs. P")
+	cam_volcano_plot(overall.cam.c6, label.size=2.5, fdr.cut=fdr.cut) + ggtitle("RCs vs. P")
 	,
 	width = 8, height = 5,
 	file = insert(out.fname, c("camera", "c6", "volcano", "all"), ext="pdf")
@@ -174,7 +175,8 @@ clones.cams.c6 <- camera_batch(y, gsets.c6$data);
 for (i in 1:length(clones.cams.c6)) {
 	name <- names(clones.cams.c6)[i];	
 	qdraw(
-		cam_volcano_plot(clones.cams.c6[[i]], label.size=2.5) + ggtitle(paste0(name, " vs. P"))
+		cam_volcano_plot(clones.cams.c6[[i]], label.size=2.5, fdr.cut=fdr.cut) + 
+			ggtitle(paste0(name, " vs. P"))
 		,
 		width = 8, height = 5,
 		file = insert(out.fname, c("camera", "c6", "volcano", tolower(name)), ext="pdf")
@@ -199,7 +201,7 @@ overall.cam.c3 <- camera_single(overall, gsets.c3$data);
 # ILF3 is involved in interleukin signaling
 
 qdraw(
-	cam_volcano_plot(overall.cam.c3, label.size=2.5) + ggtitle("RCs vs. P") +
+	cam_volcano_plot(overall.cam.c3, label.size=2.5, fdr.cut=fdr.cut) + ggtitle("RCs vs. P") +
 		coord_cartesian(ylim=c(max(overall.cam.c3$FDR), 1e-4))
 	,
 	width = 8, height = 5,

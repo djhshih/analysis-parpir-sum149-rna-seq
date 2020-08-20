@@ -75,8 +75,13 @@ cam_volcano_plot <- function(cam, fdr.cut=0.01, z.cut=0.5, label.size=4, rename_
 		gset = rename_gset(gset)
 	);
 
-	ggplot(cam, aes(x=z1, y=FDR, alpha=keep, colour=group, label=ifelse(keep, gset, NA))) +
-		theme_clean() +
+	ggplot(cam,
+		aes(
+			x=z1, y=FDR, colour=group,
+			alpha = ifelse(keep, 0.7, 0.2),
+			label = ifelse(keep, gset, NA)
+		)
+	) + theme_clean() +
 		geom_vline(xintercept=0) +
 		geom_vline(xintercept=c(z.cut, -z.cut), linetype=3, colour="grey60") +
 		geom_hline(yintercept=fdr.cut, linetype=3, colour="grey60") +

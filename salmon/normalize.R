@@ -21,6 +21,9 @@ stopifnot(colnames(x) == as.character(pheno$sample_id))
 counts <- round(x);
 mode(counts) <- "integer";
 
+# compare all levels against DMSO
+pheno$treatment <- relevel(pheno$treatment, "DMSO");
+
 # TODO change s.t. the most extreme transcript is chosen!
 deseqresults_to_rnk <- function(res, fannot) {
 	rnk <- data.frame(gene_name = fannot$gene_name, stat = res$stat);
@@ -29,9 +32,6 @@ deseqresults_to_rnk <- function(res, fannot) {
 }
 
 #----
-
-# compare all levels against DMSO
-pheno$treatment <- relevel(pheno$treatment, "DMSO");
 
 dds.treatment <- DESeqDataSetFromMatrix(
 	countData = counts, colData = pheno,
