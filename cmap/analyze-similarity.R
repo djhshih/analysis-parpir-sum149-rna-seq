@@ -168,6 +168,10 @@ test_vs_null <- function(ss1, ss.null1, alternative = c("two.sided", "less", "gr
 	}
 }
 
+simplify_features <- function(features) {
+	sub("^.+,", "", features)
+}
+
 ####
 
 qdraw(
@@ -211,62 +215,18 @@ ss.lq[idx[1:100], ]
 ####
 
 ms.cp <- mean_transform(ss, groups$trt_cp);
-mx.cp <- max_transform(ss, groups$trt_cp);
-mn.cp <- min_transform(ss, groups$trt_cp);
-mp.cp <- median_percentile_transform(ss, groups$trt_cp);
-
 es.cp <- camera_fdr_transform(ss, groups$trt_cp);
-
-#idx <- apply(es.cp, 1, function(lq) any(lq > 6));
-idx <- apply(es.cp, 1, function(lq) any(lq > 10));
-es.cp.sub <- es.cp[idx, , drop=FALSE];
-mp.cp.sub <- mp.cp[idx, , drop=FALSE];
-ms.cp.sub <- ms.cp[idx, , drop=FALSE];
-mx.cp.sub <- mx.cp[idx, , drop=FALSE];
-
-#remap_samples <- function(samples) {
-#	sample.id <- as.integer(sub("C", "", samples));
-#	si <- order(sample.id);
-#	factor(sample.id, levels=sample.id[si], label=paste0("RC", 1:length(sample.id)))
-#}
-
-simplify_features <- function(features) {
-	sub("^.+,", "", features)
-}
-
-simplify_names <- function(z) {
-	#colnames(z) <- remap_samples(colnames(z));
-	rownames(z) <- simplify_features(rownames(z));
-	z
-}
-
-pal <- rev(brewer.pal(7, "RdBu"));
-
-#colf <- circlize::colorRamp2(c(0, 100), c(pal[4], pal[7]));
-colf <- circlize::colorRamp2(c(0, 50, 100), c(pal[1], pal[4], pal[7]));
-
-#pdf(file=tag(out.fname, c("cos-sim-percentile", "up", "heatmap"), ext="pdf"), width=5, height=12);
-pdf(file=tag(out.fname, c("cos-sim-percentile", "up", "heatmap"), ext="pdf"), width=4, height=6);
-Heatmap(simplify_names(mp.cp.sub), col=colf, heatmap_legend_param=list(title="percentile"))
-dev.off();
-
-colf <- circlize::colorRamp2(c(-0.15, 0, 0.15), c(pal[1], pal[4], pal[7]));
-Heatmap(es.cp.sub, col=colf)
-
-####
 
 cams <- lapply(colnames(es.cp),
 	function(clone) {
 	data.frame(
-		gset = sub("trt_cp,", "", rownames(es.cp)),
+		gset = simplify_features(rownames(es.cp)),
 		z1 = ms.cp[, clone],
 		FDR = 10^(-abs(es.cp[, clone])),
 		stringsAsFactors=FALSE
 	)
 });
 names(cams) <- colnames(es.cp);
-
-
 
 for (clone in names(cams)) {
 	d <- cams[[clone]];
@@ -310,7 +270,7 @@ m.es.cp <- camera_fdr_transform(ss.m, groups$trt_cp);
 m.ms.cp <- mean_transform(ss.m, groups$trt_cp);
 
 m.cam <- data.frame(
-	gset = sub("trt_cp,", "", rownames(m.es.cp)),
+	gset = simplify_features(rownames(m.es.cp)),
 	z1 = m.ms.cp[, 1],
 	FDR = 10^(-abs(m.es.cp[, 1])),
 	stringsAsFactors=FALSE
@@ -346,62 +306,6 @@ qdraw(
 );
 
 ####
-
-#idx <- apply(es.cp, 1, function(lq) any(lq < -6));
-idx <- apply(es.cp, 1, function(lq) any(lq < -15));
-es.cp.sub <- es.cp[idx, , drop=FALSE];
-mp.cp.sub <- mp.cp[idx, , drop=FALSE];
-ms.cp.sub <- mp.cp[idx, , drop=FALSE];
-mn.cp.sub <- mn.cp[idx, , drop=FALSE];
-
-pal <- rev(brewer.pal(7, "RdBu"));
-
-#colf <- circlize::colorRamp2(c(0, 100), c(pal[4], pal[7]));
-colf <- circlize::colorRamp2(c(0, 50, 100), c(pal[1], pal[4], pal[7]));
-pdf(file=tag(out.fname, c("cos-sim-percentile", "down", "heatmap"), ext="pdf"), width=4, height=24);
-Heatmap(simplify_names(mp.cp.sub), col=colf, heatmap_legend_param=list(title="percentile"))
-dev.off();
-
-colf <- circlize::colorRamp2(c(-0.15, 0, 0.15), c(pal[1], pal[4], pal[7]));
-Heatmap(mn.cp.sub, col=colf)
-
-
-####
-
-idx <- apply(es.cp, 1, min) > 1;
-es.cp.min.sub <- es.cp[idx, , drop=FALSE];
-mp.cp.min.sub <- mp.cp[idx, , drop=FALSE];
-
-
-
-varnames <- c("treatment", "clone");
-d.es <- melt(es.cp.min.sub, varnames=varnames);
-d.mp <- melt(mp.cp.min.sub, varnames=varnames);
-
-# up FDR needs to be negated
-d <- left_join(mutate(d.es, q=10^(-value)) %>% select(-value), rename(d.mp, percentile=value));
-
-# rank treatments by percentile
-treatments <- levels(d$treatment);
-means <- d %>% group_by(treatment) %>% summarize(y=mean(percentile));
-idx <- order( -means$y );
-d$treatment <- factor(d$treatment, levels=treatments[idx]);
-
-qdraw(
-	ggplot(d, aes(x=clone, y=percentile, fill=q)) +
-		geom_bar(stat="identity") + theme_bw() +
-		facet_wrap(~ treatment, ncol=1, strip.position="top") +
-		#facet_wrap(~ treatment, nrow=1, strip.position="top") +
-		scale_fill_gradient(low="#56B1F7", high="#132B43", trans="log10") +
-		ylab("median percentile of cosine similarity")
-	,
-	width = 3.5, height = 10,
-	file = insert(out.fname, c("trt_cp", "up", "min-q"), ext="pdf")
-);
-
-
-####
-
 
 plot_compound <- function(compound) {
 	idx <- groups$trt_cp[[paste0("trt_cp,", compound)]];
