@@ -194,11 +194,11 @@ ss.p <- do.call(rbind, lapply(
 rownames(ss.p) <- rownames(ss);
 colnames(ss.p) <- colnames(ss);
 
-hist(ss.p, breaks=100)
+#hist(ss.p, breaks=100)
 
 ss.q <- t(apply(ss.p, 1, p.adjust, method="BH"));
 
-hist(ss.q, breaks=100)
+#hist(ss.q, breaks=100)
 
 ss.q.min <- min_transform(ss.q, groups$trt_cp);
 
@@ -242,7 +242,7 @@ for (clone in names(cams)) {
 			ggtitle(clone)
 		,
 		width = 8, height = 5,
-		file = insert(out.fname, c("cmap-cosine", "camera", "volcano", clone), ext="pdf")
+		file = insert(out.fname, c("cmap-cos-sim", "camera", "volcano", clone), ext="pdf")
 	);
 }
 
@@ -259,7 +259,7 @@ cam.all <- do.call(rbind,
 rownames(cam.all) <- NULL;
 cam.all <- rename(cam.all, clone = clone, compound = gset, similarity = z1, fdr = FDR);
 
-qwrite(cam.all, insert(out.fname, c("cmap-cosine", "camera"), ext="tsv"));
+qwrite(cam.all, insert(out.fname, c("cmap-cos-sim", "camera"), ext="tsv"));
 
 ####
 
@@ -277,6 +277,9 @@ m.cam <- data.frame(
 );
 rownames(m.cam) <- NULL;
 
+cam.overall <- rename(m.cam, compound = gset, similarity = z1, fdr = FDR);
+qwrite(cam.overall, insert(out.fname, c("cmap-cos-sim", "camera", "all"), ext="tsv"));
+
 m.cam$group <- m.cam$gset %in% c("vinblastine", "vincristine");
 
 qdraw(
@@ -287,9 +290,10 @@ qdraw(
 		ggtitle("RCs")
 	,
 	width = 8, height = 5,
-	file = insert(out.fname, c("cmap-cosine", "camera", "volcano", "all", "down"), ext="pdf")
+	file = insert(out.fname, c("cmap-cos-sim", "camera", "volcano", "all", "down"), ext="pdf")
 );
 
+m.cam$group <- NULL;
 m.cam.a <- left_join(m.cam, rename(compound.annot, gset=pert_iname, group=compound_class));
 m.cam.a$group <- factor(m.cam.a$group, levels=c("MEK inhibitor", "ERK inhibitor", "RAF inhibitor", "PI3K inhibitor"));
 
@@ -302,32 +306,91 @@ qdraw(
 		ggtitle("RCs")
 	,
 	width = 8, height = 5,
-	file = insert(out.fname, c("cmap-cosine", "camera", "volcano", "all"), ext="pdf")
+	file = insert(out.fname, c("cmap-cos-sim", "camera", "volcano", "all"), ext="pdf")
 );
 
 ####
 
-plot_compound <- function(compound) {
+ms.cp <- mean_transform(ss, groups$trt_cp);
+ms.null <- mean_transform(ss.null, groups$trt_cp);
+
+density.ms.null <- density(ms.null, bw=0.01);
+density.ms.cp <- density(ms.cp, bw=0.01);
+
+d.density <- rbind(
+	with(density.ms.null, data.frame(x = x, y = y, group = "permuted")),
+	with(density.ms.cp, data.frame(x = x, y = y, group = "observed"))
+);
+
+d.cp <- data.frame(
+	clone = colnames(ms.cp),
+	value = ms.cp["trt_cp,vincristine",]
+);
+
+ggplot(d.density, aes(x=x, y=y)) + theme_clean() +
+	geom_vline(xintercept=0, colour="grey90", linetype=2) +	
+	geom_line(aes(style=group), show.legend=FALSE) +
+	#scale_colour_manual(values=c(observed="firebrick", permuted="grey30")) +
+	geom_rug(sides="b", aes(x=value, y=0, colour=clone), data=d.cp)
+
+####
+
+plot_compound <- function(compound, ss, ss.null, test.method = NA) {
 	idx <- groups$trt_cp[[paste0("trt_cp,", compound)]];
 	ss.sub <- ss[, idx];
 	d.ss <- melt(ss.sub, varnames=c("clone", "sig"));
+	d.ss$clone <- as.character(d.ss$clone);
+	d.ss <- d.ss[order(d.ss$clone), ];
+	d.ss$group <- "observed";
 
-	qdraw(
-		ggplot(d.ss, aes(x=clone, y=value)) + geom_boxplot() + theme_bw() +
+	d.ss.null <- ss.null[, idx];
+	d.ss.null <- melt(ss.null, varnames=c("clone", "sig"));
+	d.ss.null$clone <- as.character(d.ss.null$clone);
+	d.ss.null <- d.ss.null[order(d.ss$clone), ];
+	d.ss.null$group <- "permuted";
+
+	d <- rbind(d.ss, d.ss.null);
+	d$group <- factor(d$group, levels=c("permuted", "observed"));
+
+	d$fill <- ifelse(d$group == "permuted", "permuted", d$clone);
+
+	g <- ggplot(d, aes(x=group, y=value, fill=fill)) + theme_clean() +
+			geom_boxplot() +
+			#geom_violin() +
+			facet_grid(~ clone) +
 			ylab("cosine similarity") +
 			geom_hline(yintercept=0, colour="grey40", linetype=2) +
-			ggtitle(compound)
-		,
-		width = 4, height = 5,
+			scale_fill_manual(values = c(clone.cols, permuted="grey40")) +
+			guides(fill=FALSE) + xlab("") +
+			theme(axis.text.x = element_text(angle=45, hjust=1));
+
+	if (is.na(test.method)) {
+		g <- g + ggtitle(compound);
+	} else {
+		if (test.method == "wilcoxon") {
+			pval <- wilcox.test(value ~ group, data=d)$p.value;
+		} else if (test.method == "anova") {
+			fit0 <- lm(value ~ clone, data=d);
+			fit <- lm(value ~ group + clone, data=d);
+			pval <- anova(fit0, fit)[2, "Pr(>F)"];
+		}
+		g <- g + ggtitle(sprintf("%s (p = %s)", compound, format(pval, digits=2)));
+	}
+
+	qdraw(
+		g,
+		width = 5, height = 4,
 		file = insert(out.fname, c("cos-sim", compound), ext="pdf")
 	);
 }
 
+my_plot_compound <- function(compound, ...) plot_compound(compound, ss, ss.null, test.method="anova");
+
 # negative correlated
-plot_compound("obatoclax");
-plot_compound("prostratin");
-plot_compound("vincristine");
-plot_compound("vinblastine");
+my_plot_compound("obatoclax");
+my_plot_compound("prostratin");
+my_plot_compound("vincristine");
+my_plot_compound("vinblastine");
 
 # budesonide: anti-inflammatory
 # AS-605240: PI3K inhibitor
@@ -343,13 +406,16 @@ plot_compound("vinblastine");
 # AS-703026: MEK inhibitor
 
 # positively correlated
-plot_compound("selumetinib");
-plot_compound("trametinib");
-plot_compound("AS-605240");
+my_plot_compound("selumetinib");
+my_plot_compound("trametinib");
+my_plot_compound("AS-605240");
 
 # others
 
-plot_compound("paclitaxel");
-plot_compound("docetaxel");
+# common treatment for triple negative breast cancer
+my_plot_compound("paclitaxel");
 
-groups$trt_cp[[paste0("trt_cp,", "paclitaxel")]];
+# subtle and heterogeneous changes
+my_plot_compound("doxorubicin");
+my_plot_compound("docetaxel");
+
