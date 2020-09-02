@@ -78,6 +78,6 @@ deseq_plot_stat <- function(d) {
 		sorting = "descending",
 		rotate = TRUE
 	) + geom_hline(yintercept=0, color="grey90") +
-		xlab("") + ylab("difference statistic") + guides(color=FALSE)
+		xlab("") + ylab("Wald statistic") + guides(color=FALSE)
 }
 

@@ -130,6 +130,6 @@ plot_gene_set_density <- function(y, genes=NULL) {
 		scale_fill_manual(values=clone.cols) +
 		facet_wrap(~ comparison, ncol=1) +
 		guides(fill=FALSE) +
-		xlab("standardized difference vs. parental")
+		xlab("Wald statistic")
 }
 
