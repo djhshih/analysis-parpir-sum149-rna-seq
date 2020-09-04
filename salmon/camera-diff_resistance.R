@@ -114,7 +114,7 @@ qdraw(
 ####
 
 plot.opts <- getOption("plot");
-options(plot = within(plot.opts, {width <- 2; height <- 6;}));
+options(plot = within(plot.opts, {width <- 2; height <- 8;}));
 
 qdraw(
 	plot_gene_set_density(y) + ggtitle("All genes") + xlim(-6, 6)
