@@ -20,7 +20,7 @@ out.fname$ext <- NULL;
 mc.cores <- 4;
 fdr.cut <- 0.05;
 
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
+pheno <- setup_pheno(qread("../annot/sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 x <- qread(in.fname);
 
 

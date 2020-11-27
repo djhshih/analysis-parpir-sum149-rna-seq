@@ -8,7 +8,7 @@ out.fname <- insert(in.fname, "cb");
 
 x <- qread(in.fname);
 fannot <- qread("parpi-resist_fannot.rds");
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+pheno <- setup_pheno(qread("../annot/sample-info_parpi-resist_stage2.tsv"));
 
 stopifnot(colnames(x) == as.character(pheno$sample_id))
 

@@ -25,7 +25,7 @@ in.fname <- as.filename("parpi-resist_deseq-stat_treatment-clone-interaction_clo
 out.fname <- in.fname;
 out.fname$ext <- NULL;
 
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
+pheno <- setup_pheno(qread("../annot/sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 x <- qread(in.fname);
 
 

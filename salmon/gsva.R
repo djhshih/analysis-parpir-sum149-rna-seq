@@ -21,7 +21,7 @@ mc.cores <- 4;
 
 
 x <- qread(in.fname);
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
+pheno <- setup_pheno(qread("../annot/sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 
 # arrange samples in order of clones
 idx <- order(pheno$clone);

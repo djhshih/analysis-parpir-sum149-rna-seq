@@ -12,7 +12,7 @@ pdf.fname <- insert(out.fname, ext="pdf");
 
 x <- qread("parpi-resist_counts.rds");
 fannot <- qread("parpi-resist_fannot.rds");
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"));
+pheno <- setup_pheno(qread("../annot/sample-info_parpi-resist_stage2.tsv"));
 
 stopifnot(colnames(x) == as.character(pheno$sample_id))
 

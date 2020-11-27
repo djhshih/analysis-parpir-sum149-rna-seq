@@ -6,7 +6,7 @@ out.fname <- filename("parpi-resist");
 
 tpm <- qread("parpi-resist_tpm.rds");
 fannot <- qread("parpi-resist_fannot.rds");
-pheno <- qread("../sample-info_parpi-resist_stage2.tsv");
+pheno <- qread("../annot/sample-info_parpi-resist_stage2.tsv");
 
 barcodes <- strsplit(as.character(pheno$barcode), "+", fixed=TRUE);
 pheno$barcode1 <- unlist(lapply(barcodes, function(x) x[1]));

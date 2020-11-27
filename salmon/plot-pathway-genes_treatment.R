@@ -16,7 +16,7 @@ out.fname <- in.fname;
 out.fname$ext <- NULL;
 
 res <- qread(in.fname);
-pheno <- setup_pheno(qread("../sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
+pheno <- setup_pheno(qread("../annot/sample-info_parpi-resist_stage2.tsv"), rename.clones=TRUE);
 fannot <- qread("parpi-resist_fannot.rds");
 
 ####
