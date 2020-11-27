@@ -1,6 +1,6 @@
 #!/bin/bash
 
-list=samples.vtr
+list=annot/samples.vtr
 
 script=bin/salmon.sh
 indir=cutadapt2/fastq
