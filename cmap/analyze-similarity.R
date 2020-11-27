@@ -414,6 +414,7 @@ my_plot_compound("AS-605240");
 
 # common treatment for triple negative breast cancer
 my_plot_compound("paclitaxel");
+my_plot_compound("cisplatin");
 
 # subtle and heterogeneous changes
 my_plot_compound("doxorubicin");
