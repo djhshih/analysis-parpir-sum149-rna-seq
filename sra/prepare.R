@@ -7,7 +7,7 @@ r <- with(pheno,
 	paste0(clone, "_r", gsub(".+-", "", sample_id))
 );
 
-biosample.d <- mutate(pheno,
+biosample.d <- transmute(pheno,
 	sample_name = sample_id,
 	sample_title = paste("SUM149PT", clone, "clone,", treatment),
 	organism = "Homo sapiens",
@@ -22,7 +22,7 @@ biosample.d <- mutate(pheno,
 
 qwrite(biosample.d, "biosample-attributes.tsv")
 
-sra.d <- mutate(pheno,
+sra.d <- transmute(pheno,
 	sample_name = sample_id,
 	library_ID = paste0("L", lane, "_", barcode),
 	title = paste0("RNA-Seq of Homo sapiens: SUM149PT"),
