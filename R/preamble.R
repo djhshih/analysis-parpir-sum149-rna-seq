@@ -27,7 +27,7 @@ setup_pheno <- function(pheno, rename.clones=FALSE) {
 	pheno$treatment = factor(pheno$treatment, levels=c("None", "DMSO", "Talazoparib"));
 
 	# the parental clone is sensitive
-	pheno$resistance <- relevel(pheno$resistance, "Sensitive");
+	pheno$resistance <- relevel(factor(pheno$resistance), "Sensitive");
 
 	# the parent clone is the reference
 	if (rename.clones) {
